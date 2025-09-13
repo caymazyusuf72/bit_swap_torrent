@@ -184,7 +184,7 @@ Bu yazılım yalnızca yasal içerikler için kullanılmalıdır. Telifli içeri
 
 ## 🔗 Bağlantılar
 
-- [GitHub](https://github.com/your-username/bitswaptorrent)
+
 - [Crates.io](https://crates.io/crates/bit-swap-torrent)
 - [Docs.rs](https://docs.rs/bit-swap-core)
 
