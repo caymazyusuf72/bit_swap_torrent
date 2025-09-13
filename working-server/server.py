@@ -348,3 +348,290 @@ class BitSwapHandler(BaseHTTPRequestHandler):
                     
                     if (index === files.length - 1) {
                         progress.style.display = 'none';
+                        text.textContent = '';
+                    }
+                };
+                
+                xhr.open('POST', '/api/upload');
+                xhr.send(formData);
+            });
+        }
+        
+        function loadStats() {
+            fetch('/api/files?action=stats')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('totalFiles').textContent = data.stats.total_files;
+                        document.getElementById('totalSize').textContent = formatBytes(data.stats.total_size);
+                        document.getElementById('totalDownloads').textContent = data.stats.total_downloads;
+                    }
+                })
+                .catch(() => {});
+        }
+        
+        function loadFiles() {
+            fetch('/api/files?action=list')
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('filesList');
+                    if (data.success && data.files.length > 0) {
+                        list.innerHTML = data.files.map(file => `
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <h4>📄 ${file.name}</h4>
+                                    <div class="file-details">
+                                        💾 ${formatBytes(file.size)} • ⬇️ ${file.download_count} indirme
+                                    </div>
+                                </div>
+                                <button class="btn" onclick="downloadFile('${file.hash}', '${file.name}')">
+                                    📥 İndir
+                                </button>
+                            </div>
+                        `).join('');
+                    } else {
+                        list.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.8;">🎯 Henüz dosya yok. İlk dosyayı sen yükle!</div>';
+                    }
+                })
+                .catch(() => {});
+        }
+        
+        function downloadFile(hash, name) {
+            const link = document.createElement('a');
+            link.href = '/download/' + hash;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('📥 ' + name + ' indiriliyor...');
+            setTimeout(() => {
+                loadStats();
+                loadFiles();
+            }, 1000);
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+    </script>
+</body>
+</html>'''
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Cache-Control', 'no-cache')
+        self.end_headers()
+        self.wfile.write(html.encode('utf-8'))
+    
+    def handle_api_files(self, parsed):
+        """API dosya istekleri"""
+        query = parse_qs(parsed.query)
+        action = query.get('action', ['list'])[0]
+        
+        conn = sqlite3.connect('bitswap.db')
+        conn.row_factory = sqlite3.Row
+        
+        try:
+            if action == 'stats':
+                row = conn.execute('SELECT COUNT(*) as total_files, SUM(file_size) as total_size, SUM(download_count) as total_downloads FROM files').fetchone()
+                stats = {
+                    'total_files': row['total_files'] or 0,
+                    'total_size': row['total_size'] or 0,
+                    'total_downloads': row['total_downloads'] or 0
+                }
+                response = {'success': True, 'stats': stats}
+            else:
+                files = []
+                rows = conn.execute('SELECT * FROM files ORDER BY upload_time DESC LIMIT 50').fetchall()
+                for row in rows:
+                    files.append({
+                        'hash': row['file_hash'],
+                        'name': row['original_name'],
+                        'size': row['file_size'],
+                        'download_count': row['download_count'],
+                        'upload_time': row['upload_time']
+                    })
+                response = {'success': True, 'files': files}
+        except Exception as e:
+            response = {'success': False, 'error': str(e)}
+        finally:
+            conn.close()
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+    
+    def handle_upload(self):
+        """Dosya yükleme işlemi"""
+        try:
+            # Content-Length al
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            # Multipart parsing (basit)
+            boundary = None
+            content_type = self.headers.get('Content-Type', '')
+            if 'boundary=' in content_type:
+                boundary = content_type.split('boundary=')[1].encode()
+            
+            if not boundary:
+                raise ValueError("Boundary bulunamadı")
+            
+            # Dosya verilerini ayıkla
+            parts = post_data.split(b'--' + boundary)
+            file_data = None
+            filename = None
+            
+            for part in parts:
+                if b'Content-Disposition: form-data' in part and b'filename=' in part:
+                    # Filename bul
+                    lines = part.split(b'\r\n')
+                    for line in lines:
+                        if b'filename=' in line:
+                            filename = line.decode().split('filename="')[1].split('"')[0]
+                            break
+                    
+                    # Dosya verilerini bul
+                    if b'\r\n\r\n' in part:
+                        file_data = part.split(b'\r\n\r\n', 1)[1]
+                        # Son \r\n'i kaldır
+                        if file_data.endswith(b'\r\n'):
+                            file_data = file_data[:-2]
+                    break
+            
+            if not file_data or not filename:
+                raise ValueError("Dosya bulunamadı")
+            
+            # Hash hesapla
+            file_hash = hashlib.sha256(file_data).hexdigest()
+            file_size = len(file_data)
+            
+            # Database kontrolü
+            conn = sqlite3.connect('bitswap.db')
+            existing = conn.execute('SELECT * FROM files WHERE file_hash = ?', (file_hash,)).fetchone()
+            
+            if existing:
+                conn.close()
+                response = {
+                    'success': True,
+                    'message': 'Dosya zaten mevcut',
+                    'hash': file_hash,
+                    'share_url': f"http://{self.headers['Host']}/download/{file_hash}"
+                }
+            else:
+                # Dosyayı kaydet
+                safe_filename = "".join(c for c in filename if c.isalnum() or c in '._-')
+                file_path = f"uploads/{file_hash}_{safe_filename}"
+                
+                with open(file_path, 'wb') as f:
+                    f.write(file_data)
+                
+                # Database'e ekle
+                uploader_ip = self.client_address[0]
+                conn.execute('''
+                    INSERT INTO files (file_hash, original_name, file_path, file_size, uploader_ip)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (file_hash, filename, file_path, file_size, uploader_ip))
+                conn.commit()
+                conn.close()
+                
+                response = {
+                    'success': True,
+                    'message': 'Dosya başarıyla yüklendi',
+                    'hash': file_hash,
+                    'original_name': filename,
+                    'size': file_size,
+                    'share_url': f"http://{self.headers['Host']}/download/{file_hash}"
+                }
+        
+        except Exception as e:
+            response = {'success': False, 'message': str(e)}
+        
+        self.send_response(200 if response['success'] else 400)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+    
+    def handle_download(self, file_hash):
+        """Dosya indirme"""
+        conn = sqlite3.connect('bitswap.db')
+        file_record = conn.execute('SELECT * FROM files WHERE file_hash = ?', (file_hash,)).fetchone()
+        
+        if not file_record:
+            conn.close()
+            self.send_error(404, "Dosya bulunamadı")
+            return
+        
+        file_path = file_record[3]  # file_path
+        original_name = file_record[2]  # original_name
+        file_size = file_record[4]  # file_size
+        
+        if not os.path.exists(file_path):
+            conn.close()
+            self.send_error(404, "Dosya disk üzerinde bulunamadı")
+            return
+        
+        # İndirme sayacını artır
+        conn.execute('UPDATE files SET download_count = download_count + 1 WHERE file_hash = ?', (file_hash,))
+        conn.commit()
+        conn.close()
+        
+        # MIME type tahmin et
+        mime_type, _ = mimetypes.guess_type(original_name)
+        if not mime_type:
+            mime_type = 'application/octet-stream'
+        
+        # Dosyayı gönder
+        self.send_response(200)
+        self.send_header('Content-Type', mime_type)
+        self.send_header('Content-Disposition', f'attachment; filename="{original_name}"')
+        self.send_header('Content-Length', str(file_size))
+        self.end_headers()
+        
+        with open(file_path, 'rb') as f:
+            shutil.copyfileobj(f, self.wfile)
+
+def run_server(port=8000):
+    """Server'ı çalıştır"""
+    server_address = ('', port)
+    httpd = HTTPServer(server_address, BitSwapHandler)
+    
+    print(f"""
+🎉 BitSwapTorrent Server BAŞLADI! 
+
+📍 Adres: http://localhost:{port}
+📁 Uploads: uploads/ klasörü  
+💾 Database: bitswap.db
+
+✅ SIFIR KURULUM - Sadece Python!
+🔗 Tarayıcında http://localhost:{port} aç
+
+🛑 Durdurmak için Ctrl+C
+
+🚀 GERÇEK DOSYA PAYLAŞIMI BAŞLADI!
+""")
+    
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\n🛑 Server durduruldu!")
+        httpd.server_close()
+
+if __name__ == '__main__':
+    run_server()
