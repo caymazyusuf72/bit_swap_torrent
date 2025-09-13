@@ -182,11 +182,7 @@ Bu proje MIT veya Apache-2.0 lisansları altında dağıtılmaktadır.
 
 Bu yazılım yalnızca yasal içerikler için kullanılmalıdır. Telifli içerik paylaşımı yasa dışıdır ve kullanıcının sorumluluğundadır.
 
-## 🔗 Bağlantılar
 
-
-- [Crates.io](https://crates.io/crates/bit-swap-torrent)
-- [Docs.rs](https://docs.rs/bit-swap-core)
 
 ---
 
