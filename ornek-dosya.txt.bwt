@@ -1,0 +1,21 @@
+{
+  "name": "ornek-dosya.txt",
+  "created_by": "BitSwapTorrent/0.1.0",
+  "created_at": "2025-09-13T07:01:45Z",
+  "piece_length": 524288,
+  "pieces": [
+    "32ec0eea079208b7c3bfe85ff6b3b1cf0eb8c791a2979d6256f7ea68e6b86d24"
+  ],
+  "files": [
+    {
+      "path": [
+        "ornek-dosya.txt"
+      ],
+      "length": 112
+    }
+  ],
+  "info_hash": "586e15d37bdee36970aecf344595cfbbfd1d913d6fc6deba1e8cf325acb76039",
+  "trackers": [],
+  "web_seed": [],
+  "extra": {}
+}
