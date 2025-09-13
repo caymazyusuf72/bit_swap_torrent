@@ -186,4 +186,5 @@ Bu yazılım yalnızca yasal içerikler için kullanılmalıdır. Telifli içeri
 
 ---
 
-BitSwapTorrent ile güvenli ve modern P2P dosya paylaşımı! 🚀
+Uygulamayı web arayüzünde sıkıntı yaşadım arkadaşlar geliştirebilecek olursa sevinirim :) 
+---
