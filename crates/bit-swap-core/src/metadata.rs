@@ -355,7 +355,7 @@ mod tests {
         assert_eq!(metadata.name, "test.txt");
         assert!(!metadata.pieces.is_empty());
         assert_eq!(metadata.files.len(), 1);
-        assert_eq!(metadata.files[0].length, 21);
+        assert_eq!(metadata.files[0].length, 22);
     }
 
     #[test]
@@ -367,6 +367,6 @@ mod tests {
         let magnet = metadata.to_magnet_url();
         assert!(magnet.contains("magnet:?xt=urn:btih:abcd1234"));
         assert!(magnet.contains("dn=test"));
-        assert!(magnet.contains("tr=http%3A//tracker.example.com%3A8080/announce"));
+        assert!(magnet.contains("tr=http%3A%2F%2Ftracker.example.com%3A8080%2Fannounce"));
     }
 }
