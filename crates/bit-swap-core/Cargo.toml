@@ -1,0 +1,37 @@
+[package]
+name = "bit-swap-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["BitSwapTorrent Team"]
+description = "Core P2P file sharing library for BitSwapTorrent"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/bitswaptorrent/bitswaptorrent"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+libp2p = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }
+sha2 = { workspace = true }
+blake3 = { workspace = true }
+rand = { workspace = true }
+sled = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+bytes = { workspace = true }
+futures = { workspace = true }
+uuid = { workspace = true }
+dirs = "5.0"
+hex = "0.4"
+urlencoding = "2.1"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+criterion = { workspace = true }
+tokio-test = "0.4"
+tempfile = "3.8"
