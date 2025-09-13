@@ -12,7 +12,7 @@ class BitSwapUI {
     init() {
         this.setupEventListeners();
         this.startStatsUpdater();
-        this.updateUI();
+        this.renderDashboard();
     }
     
     setupEventListeners() {
