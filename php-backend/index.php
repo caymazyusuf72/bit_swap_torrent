@@ -597,3 +597,210 @@
                 
                 xhr.addEventListener('error', function() {
                     showNotification(`Ağ hatası: ${file.name}`, 'error');
+                });
+                
+                xhr.open('POST', 'api/upload.php');
+                xhr.send(formData);
+            });
+        }
+
+        function loadStats() {
+            fetch('api/files.php?action=stats')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const stats = data.stats;
+                        document.getElementById('totalFiles').textContent = stats.total_files;
+                        document.getElementById('totalSize').textContent = formatBytes(stats.total_size);
+                        document.getElementById('activePeers').textContent = stats.active_peers;
+                        document.getElementById('totalDownloads').textContent = stats.total_downloads;
+                    }
+                })
+                .catch(error => {
+                    console.error('Stats yükleme hatası:', error);
+                });
+        }
+
+        function loadFiles() {
+            const filesList = document.getElementById('filesList');
+            filesList.innerHTML = '<div class="loading">Dosyalar yükleniyor...</div>';
+            
+            fetch('api/files.php?action=list')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayFiles(data.files);
+                    } else {
+                        filesList.innerHTML = '<div class="loading">Dosya yüklenemedi: ' + data.error + '</div>';
+                    }
+                })
+                .catch(error => {
+                    filesList.innerHTML = '<div class="loading">Ağ hatası!</div>';
+                    console.error('Dosya yükleme hatası:', error);
+                });
+        }
+
+        function displayFiles(files) {
+            const filesList = document.getElementById('filesList');
+            
+            if (files.length === 0) {
+                filesList.innerHTML = '<div class="loading">Henüz dosya yok. İlk dosyayı sen yükle!</div>';
+                return;
+            }
+            
+            filesList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div class="file-icon">
+                        <i class="${getFileIcon(file.name)}"></i>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-details">
+                            ${formatBytes(file.size)} • ${file.download_count} indirme • ${file.peer_count} peer
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-primary btn-small" onclick="downloadFile('${file.hash}', '${file.name}')">
+                            <i class="fas fa-download"></i>
+                            İndir
+                        </button>
+                        <button class="btn btn-secondary btn-small" onclick="copyMagnet('${file.magnet_url}')">
+                            <i class="fas fa-link"></i>
+                            Magnet
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function refreshFiles() {
+            loadFiles();
+        }
+
+        function downloadFile(hash, name) {
+            const link = document.createElement('a');
+            link.href = `api/download.php?hash=${hash}`;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`${name} indiriliyor...`, 'info');
+            
+            // Refresh stats after download
+            setTimeout(() => {
+                loadStats();
+            }, 1000);
+        }
+
+        function copyMagnet(magnetUrl) {
+            copyToClipboard(magnetUrl);
+            showNotification('Magnet linki panoya kopyalandı!', 'success');
+        }
+
+        // Utility functions
+        function formatBytes(bytes) {
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            if (bytes === 0) return '0 B';
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'txt': 'fas fa-file-text',
+                'pdf': 'fas fa-file-pdf',
+                'doc': 'fas fa-file-word',
+                'docx': 'fas fa-file-word',
+                'xls': 'fas fa-file-excel',
+                'xlsx': 'fas fa-file-excel',
+                'zip': 'fas fa-file-archive',
+                'rar': 'fas fa-file-archive',
+                '7z': 'fas fa-file-archive',
+                'iso': 'fas fa-file-archive',
+                'mp3': 'fas fa-music',
+                'wav': 'fas fa-music',
+                'mp4': 'fas fa-film',
+                'avi': 'fas fa-film',
+                'mkv': 'fas fa-film',
+                'jpg': 'fas fa-image',
+                'png': 'fas fa-image',
+                'gif': 'fas fa-image'
+            };
+            return iconMap[ext] || 'fas fa-file';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).catch(err => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                color: var(--text-primary);
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            `;
+            
+            const colors = {
+                success: 'var(--success)',
+                error: 'var(--danger)',
+                warning: 'var(--warning)',
+                info: 'var(--info)'
+            };
+            
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            notification.innerHTML = `
+                <i class="fas ${icons[type] || icons.info}" style="color: ${colors[type] || colors.info}; margin-right: 0.5rem;"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
