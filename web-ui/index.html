@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitSwapTorrent - Web UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h1>BitSwapTorrent</h1>
+                    <span class="version">v0.1.0</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="showAddTorrentModal()">
+                        <i class="fas fa-plus"></i>
+                        Torrent Ekle
+                    </button>
+                    <button class="btn btn-secondary" onclick="showSettingsModal()">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-item active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-tab="torrents">
+                <i class="fas fa-download"></i>
+                <span>Torrentler</span>
+                <span class="badge">3</span>
+            </div>
+            <div class="nav-item" data-tab="peers">
+                <i class="fas fa-users"></i>
+                <span>Peer'lar</span>
+            </div>
+            <div class="nav-item" data-tab="settings">
+                <i class="fas fa-cog"></i>
+                <span>Ayarlar</span>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Dashboard Tab -->
+            <div class="tab-content active" id="dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon download">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">2.4 MB/s</div>
+                            <div class="stat-label">İndirme Hızı</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon upload">
+                            <i class="fas fa-upload"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">847 KB/s</div>
+                            <div class="stat-label">Yükleme Hızı</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon peers">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">23</div>
+                            <div class="stat-label">Bağlı Peer</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon torrents">
+                            <i class="fas fa-file-archive"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">3</div>
+                            <div class="stat-label">Aktif Torrent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="section">
+                        <h2>Son Aktiviteler</h2>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <i class="fas fa-plus-circle text-success"></i>
+                                <span>ornek-dosya.txt torrent'i eklendi</span>
+                                <span class="time">2 dakika önce</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-check-circle text-success"></i>
+                                <span>ubuntu-22.04.iso indirme tamamlandı</span>
+                                <span class="time">1 saat önce</span>
+                            </div>
+                            <div class="activity-item">
+                                <i class="fas fa-user-plus text-info"></i>
+                                <span>5 yeni peer bağlandı</span>
+                                <span class="time">3 saat önce</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h2>Sistem Durumu</h2>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span class="status-dot online"></span>
+                                <span>DHT: Çevrimiçi</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-dot online"></span>
+                                <span>UPnP: Etkin</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-dot online"></span>
+                                <span>Port 6881: Açık</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Torrents Tab -->
+            <div class="tab-content" id="torrents">
+                <div class="torrents-header">
+                    <h2>Torrentler</h2>
+                    <div class="torrent-filters">
+                        <button class="filter-btn active" data-filter="all">Tümü</button>
+                        <button class="filter-btn" data-filter="downloading">İndiriliyor</button>
+                        <button class="filter-btn" data-filter="seeding">Seeding</button>
+                        <button class="filter-btn" data-filter="completed">Tamamlandı</button>
+                    </div>
+                </div>
+
+                <div class="torrent-list">
+                    <div class="torrent-item">
+                        <div class="torrent-icon">
+                            <i class="fas fa-file-text"></i>
+                        </div>
+                        <div class="torrent-info">
+                            <div class="torrent-name">ornek-dosya.txt</div>
+                            <div class="torrent-details">
+                                <span class="size">112 B</span>
+                                <span class="status seeding">Seeding</span>
+                                <span class="peers">3 peers</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="torrent-actions">
+                            <button class="action-btn" title="Duraklat">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="action-btn" title="Sil">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="torrent-item">
+                        <div class="torrent-icon">
+                            <i class="fas fa-file-archive"></i>
+                        </div>
+                        <div class="torrent-info">
+                            <div class="torrent-name">ubuntu-22.04.iso</div>
+                            <div class="torrent-details">
+                                <span class="size">4.7 GB</span>
+                                <span class="status downloading">İndiriliyor</span>
+                                <span class="peers">12 peers</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 67%"></div>
+                            </div>
+                        </div>
+                        <div class="torrent-actions">
+                            <button class="action-btn" title="Duraklat">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="action-btn" title="Sil">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="torrent-item">
+                        <div class="torrent-icon">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="torrent-info">
+                            <div class="torrent-name">Music Collection 2024</div>
+                            <div class="torrent-details">
+                                <span class="size">1.2 GB</span>
+                                <span class="status completed">Tamamlandı</span>
+                                <span class="peers">8 peers</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div class="torrent-actions">
+                            <button class="action-btn" title="Başlat">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn" title="Sil">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Peers Tab -->
+            <div class="tab-content" id="peers">
+                <h2>Bağlı Peer'lar</h2>
+                <div class="peer-list">
+                    <div class="peer-item">
+                        <div class="peer-info">
+                            <div class="peer-id">192.168.1.105:6881</div>
+                            <div class="peer-details">
+                                <span class="flag">🇹🇷</span>
+                                <span class="client">BitSwapTorrent 0.1.0</span>
+                            </div>
+                        </div>
+                        <div class="peer-stats">
+                            <div class="stat">
+                                <i class="fas fa-download text-success"></i>
+                                <span>1.2 MB/s</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-upload text-info"></i>
+                                <span>340 KB/s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="peer-item">
+                        <div class="peer-info">
+                            <div class="peer-id">88.247.123.45:6881</div>
+                            <div class="peer-details">
+                                <span class="flag">🇺🇸</span>
+                                <span class="client">qBittorrent 4.5.2</span>
+                            </div>
+                        </div>
+                        <div class="peer-stats">
+                            <div class="stat">
+                                <i class="fas fa-download text-success"></i>
+                                <span>890 KB/s</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-upload text-info"></i>
+                                <span>156 KB/s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="peer-item">
+                        <div class="peer-info">
+                            <div class="peer-id">173.82.19.201:51413</div>
+                            <div class="peer-details">
+                                <span class="flag">🇬🇧</span>
+                                <span class="client">Transmission 3.0</span>
+                            </div>
+                        </div>
+                        <div class="peer-stats">
+                            <div class="stat">
+                                <i class="fas fa-download text-success"></i>
+                                <span>2.1 MB/s</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-upload text-info"></i>
+                                <span>780 KB/s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settings">
+                <h2>Ayarlar</h2>
+                <div class="settings-sections">
+                    <div class="settings-section">
+                        <h3>Genel</h3>
+                        <div class="setting-item">
+                            <label>İndirme Klasörü</label>
+                            <input type="text" value="C:\Users\yusuf\Downloads" class="form-input">
+                        </div>
+                        <div class="setting-item">
+                            <label>Maksimum Eş Zamanlı İndirme</label>
+                            <input type="number" value="5" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Ağ</h3>
+                        <div class="setting-item">
+                            <label>Port</label>
+                            <input type="number" value="6881" class="form-input">
+                        </div>
+                        <div class="setting-item">
+                            <label>Maksimum Peer</label>
+                            <input type="number" value="50" class="form-input">
+                        </div>
+                        <div class="setting-item">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="upnp" checked>
+                                <label for="upnp">UPnP etkin</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Hız Limitleri</h3>
+                        <div class="setting-item">
+                            <label>Maksimum İndirme Hızı (KB/s)</label>
+                            <input type="number" value="0" placeholder="Sınırsız" class="form-input">
+                        </div>
+                        <div class="setting-item">
+                            <label>Maksimum Yükleme Hızı (KB/s)</label>
+                            <input type="number" value="0" placeholder="Sınırsız" class="form-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn btn-primary">Kaydet</button>
+                    <button class="btn btn-secondary">Sıfırla</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Torrent Modal -->
+    <div class="modal" id="addTorrentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Torrent Ekle</h3>
+                <button class="modal-close" onclick="closeModal('addTorrentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" ondrop="handleDrop(event)" ondragover="handleDragOver(event)">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Dosya sürükleyip bırakın veya seçin</p>
+                    <input type="file" id="fileInput" accept=".bwt,.torrent" onchange="handleFileSelect(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                        Dosya Seç
+                    </button>
+                </div>
+                
+                <div class="or-divider">veya</div>
+                
+                <div class="magnet-input">
+                    <label>Magnet Link</label>
+                    <input type="text" placeholder="magnet:?xt=urn:btih:..." class="form-input" id="magnetInput">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="addTorrent()">Ekle</button>
+                <button class="btn btn-secondary" onclick="closeModal('addTorrentModal')">İptal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
